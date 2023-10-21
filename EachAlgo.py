@@ -132,3 +132,4 @@ if __name__ == "__main__":
         print("\nThe Divide and Conquer Algorithm is the quickest.")
     else:
         print("\nThe Decrease and Conquer Algorithm is the quickest.")
+
