@@ -3,6 +3,7 @@ import time
 from collections import defaultdict
 import heapq
 
+
 class GreedyAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
@@ -67,7 +68,7 @@ class DecreaseAndConquerAnalyzer:
 
 # Example usage with input size N and timing information
 if __name__ == "__main__":
-    N = 1000000  # Size of the input data stream (adjust as needed)
+    N = 100000  # Size of the input data stream (adjust as needed)
     heavy_hitter_threshold = 3  # Set the threshold for heavy hitters
 
     # Generating a random data stream
@@ -79,10 +80,10 @@ if __name__ == "__main__":
     decrease_and_conquer_data_stream = data_stream.copy()
 
     # Printing the input size and input stream in matrix form
-    # print("Input Size:", N)
-    # print("Input Stream (Matrix Form):")
-    # for i in range(0, len(data_stream), 10):  # Printing 10 items per row for readability
-    #     print(data_stream[i:i + 10])
+    print("Input Size:", N)
+    print("Input Stream (Matrix Form):")
+    for i in range(0, len(data_stream), 10):  # Printing 10 items per row for readability
+        print(data_stream[i:i + 10])
 
     # Greedy Algorithm
     start_time = time.time()
@@ -132,4 +133,3 @@ if __name__ == "__main__":
         print("\nThe Divide and Conquer Algorithm is the quickest.")
     else:
         print("\nThe Decrease and Conquer Algorithm is the quickest.")
-
