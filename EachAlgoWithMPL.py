@@ -9,7 +9,7 @@ class GreedyAnalyzer:
     def __init__(self, data, threshold):
         self.threshold = threshold
         self.frequency_counts = {}
-        self.quantile_estimate = None
+        self.quantile_estimates = {}
         self.heavy_hitters = set()
         self._process_data(data)
 
@@ -20,42 +20,55 @@ class GreedyAnalyzer:
             else:
                 self.frequency_counts[number] = 1
 
-            if self.quantile_estimate is None or self.frequency_counts[number] > self.frequency_counts[self.quantile_estimate]:
-                self.quantile_estimate = number
-
             if self.frequency_counts[number] >= self.threshold:
                 self.heavy_hitters.add(number)
+        data.sort()
+        data_length = len(data)
+
+        percentiles = [0.25, 0.50, 0.75]  # 25th, 50th (median), and 75th percentiles
+
+        threshold_indices = [int(data_length * p) for p in percentiles]
+        self.quantile_estimates = {
+            f'{int(p * 100)}th Percentile': data[idx - 1] for p, idx in zip(percentiles, threshold_indices)
+        }
 
     def get_frequency_counts(self):
         return self.frequency_counts
 
-    def get_quantile_estimate(self):
-        return self.quantile_estimate
+    def get_quantile_estimates(self):
+        return self.quantile_estimates
 
     def get_heavy_hitters(self):
-        return self.heavy_hitters
+        return list(set(self.heavy_hitters))
 
 class DivideAndConquerAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
-        self.quantile_estimate = None
+        self.quantile_estimates = {}
         self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_batch(self, data_batch):
         for item in data_batch:
             self.frequency_counts[item] += 1
-            if self.quantile_estimate is None or self.frequency_counts[item] > self.frequency_counts[
-                self.quantile_estimate]:
-                self.quantile_estimate = item
             if self.frequency_counts[item] >= self.heavy_hitter_threshold:
                 self.heavy_hitters.append(item)
+
+        data_batch.sort()
+        data_length = len(data_batch)
+
+        percentiles = [0.25, 0.50, 0.75]  # 25th, 50th (median), and 75th percentiles
+
+        threshold_indices = [int(data_length * p) for p in percentiles]
+        self.quantile_estimates = {
+            f'{int(p * 100)}th Percentile': data_batch[idx - 1] for p, idx in zip(percentiles, threshold_indices)
+        }
 
     def get_frequency_counts(self):
         return dict(self.frequency_counts)
 
-    def get_quantile_estimate(self):
-        return self.quantile_estimate
+    def get_quantile_estimates(self):
+        return self.quantile_estimates
 
     def get_heavy_hitters(self):
         return list(set(self.heavy_hitters))
@@ -63,24 +76,29 @@ class DivideAndConquerAnalyzer:
 class DecreaseAndConquerAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
-        self.quantile_estimate = None
+        self.quantile_estimates = {}
         self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_sample(self, sample):
         for item in sample:
             self.frequency_counts[item] += 1
-            if self.quantile_estimate is None or self.frequency_counts[item] > self.frequency_counts[
-                self.quantile_estimate]:
-                self.quantile_estimate = item
             if self.frequency_counts[item] >= self.heavy_hitter_threshold:
                 self.heavy_hitters.append(item)
+        sample.sort()
+        data_length = len(sample)
 
+        percentiles = [0.25, 0.50, 0.75]  # 25th, 50th (median), and 75th percentiles
+
+        threshold_indices = [int(data_length * p) for p in percentiles]
+        self.quantile_estimates = {
+            f'{int(p * 100)}th Percentile': sample[idx - 1] for p, idx in zip(percentiles, threshold_indices)
+        }
     def get_frequency_counts(self):
         return dict(self.frequency_counts)
 
-    def get_quantile_estimate(self):
-        return self.quantile_estimate
+    def get_quantile_estimates(self):
+        return self.quantile_estimates
     def get_heavy_hitters(self):
         return list(set(self.heavy_hitters))
 
@@ -114,7 +132,7 @@ if __name__ == "__main__":
         print("\nGreedy Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))
         print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", greedy_analyzer.get_heavy_hitters())
         print("Frequency Counts:", greedy_analyzer.get_frequency_counts())
-        print("Quantile Estimate (Median):", greedy_analyzer.get_quantile_estimate())
+        print("Quantile Estimates:", greedy_analyzer.get_quantile_estimates())
 
         # Divide and Conquer Algorithm
         start_time = time.time()
@@ -128,7 +146,7 @@ if __name__ == "__main__":
         print("\nDivide and Conquer Algorithm (Batch Size:", batch_size,") - Time taken: {:.6f} seconds".format(end_time - start_time))
         print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", divide_and_conquer_analyzer.get_heavy_hitters())
         print("Frequency Counts:", divide_and_conquer_analyzer.get_frequency_counts())
-        print("Quantile Estimate (Median):", divide_and_conquer_analyzer.get_quantile_estimate())
+        print("Quantile Estimates:", divide_and_conquer_analyzer.get_quantile_estimates())
 
         # Decrease and Conquer Algorithm
         start_time = time.time()
@@ -142,7 +160,7 @@ if __name__ == "__main__":
         print("\nDecrease and Conquer Algorithm (Sample Size:", sample_size,") - Time taken: {:.6f} seconds".format(end_time - start_time))
         print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", decrease_and_conquer_analyzer.get_heavy_hitters())
         print("Frequency Counts:", decrease_and_conquer_analyzer.get_frequency_counts())
-        print("Quantile Estimate (Median):", decrease_and_conquer_analyzer.get_quantile_estimate())
+        print("Quantile Estimates:", decrease_and_conquer_analyzer.get_quantile_estimates())
 
         # Appending times to respective lists
         greedy_times.append(greedy_time)
