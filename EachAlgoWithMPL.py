@@ -4,20 +4,21 @@ from collections import defaultdict
 import heapq
 import matplotlib.pyplot as plt
 
-global_input_sizes = [500, 2500, 5000, 10000, 50000, 100000]  # List of input sizes to test
+global_input_sizes = [50, 500, 2500, 5000, 10000, 50000, 100000]  # List of input sizes to test
 class GreedyAnalyzer:
 
 
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
         self.quantile_estimators = []
+        self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_item(self, item):
         self.frequency_counts[item] += 1
         heapq.heappush(self.quantile_estimators, item)
         if self.frequency_counts[item] >= self.heavy_hitter_threshold:
-            pass  # Heavy Hitters Detection (Greedy) - Can be implemented here
+            self.heavy_hitters.append(item)
 
     def get_frequency_counts(self):
         return dict(self.frequency_counts)
@@ -27,10 +28,14 @@ class GreedyAnalyzer:
         median_index = len(sorted_estimates) // 2
         return sorted_estimates[median_index]
 
+    def get_heavy_hitters(self):
+        return list(set(self.heavy_hitters))
+
 class DivideAndConquerAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
         self.quantile_estimators = []
+        self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_batch(self, data_batch):
@@ -38,7 +43,7 @@ class DivideAndConquerAnalyzer:
             self.frequency_counts[item] += 1
             heapq.heappush(self.quantile_estimators, item)
             if self.frequency_counts[item] >= self.heavy_hitter_threshold:
-                pass  # Heavy Hitters Detection (Divide and Conquer) - Can be implemented here
+                self.heavy_hitters.append(item)
 
     def get_frequency_counts(self):
         return dict(self.frequency_counts)
@@ -48,10 +53,14 @@ class DivideAndConquerAnalyzer:
         median_index = len(sorted_estimates) // 2
         return sorted_estimates[median_index]
 
+    def get_heavy_hitters(self):
+        return list(set(self.heavy_hitters))
+
 class DecreaseAndConquerAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
         self.quantile_estimators = []
+        self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_sample(self, sample):
@@ -59,7 +68,7 @@ class DecreaseAndConquerAnalyzer:
             self.frequency_counts[item] += 1
             heapq.heappush(self.quantile_estimators, item)
             if self.frequency_counts[item] >= self.heavy_hitter_threshold:
-                pass  # Heavy Hitters Detection (Decrease and Conquer) - Can be implemented here
+                self.heavy_hitters.append(item)
 
     def get_frequency_counts(self):
         return dict(self.frequency_counts)
@@ -68,11 +77,13 @@ class DecreaseAndConquerAnalyzer:
         sorted_estimates = sorted(self.quantile_estimators)
         median_index = len(sorted_estimates) // 2
         return sorted_estimates[median_index]
+    def get_heavy_hitters(self):
+        return list(set(self.heavy_hitters))
 
 # Example usage with input size N and timing information
 if __name__ == "__main__":
     input_sizes = global_input_sizes  # List of input sizes to test
-    heavy_hitter_threshold = 3  # Set the threshold for heavy hitters
+    #heavy_hitter_threshold = 3  # Set the threshold for heavy hitters
 
     # Lists to store time taken by each algorithm for different input sizes
     greedy_times = []
@@ -80,6 +91,7 @@ if __name__ == "__main__":
     decrease_and_conquer_times = []
 
     for N in input_sizes:
+        heavy_hitter_threshold = int(0.05 * N)
         data_stream = [random.randint(1, 20) for _ in range(N)]  # Generating a random data stream
 
         # Creating copies of the data stream for each algorithm
@@ -94,6 +106,10 @@ if __name__ == "__main__":
             greedy_analyzer.process_item(item)
         end_time = time.time()
         greedy_time = end_time - start_time
+        print("\nGreedy Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))
+        print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", greedy_analyzer.get_heavy_hitters())
+        print("Frequency Counts:", greedy_analyzer.get_frequency_counts())
+        print("Quantile Estimate (Median):", greedy_analyzer.get_quantile_estimate())
 
         # Divide and Conquer Algorithm
         start_time = time.time()
@@ -104,6 +120,10 @@ if __name__ == "__main__":
             divide_and_conquer_analyzer.process_batch(data_batch)
         end_time = time.time()
         divide_and_conquer_time = end_time - start_time
+        print("\nDivide and Conquer Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))
+        print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", divide_and_conquer_analyzer.get_heavy_hitters())
+        print("Frequency Counts:", divide_and_conquer_analyzer.get_frequency_counts())
+        print("Quantile Estimate (Median):", divide_and_conquer_analyzer.get_quantile_estimate())
 
         # Decrease and Conquer Algorithm
         start_time = time.time()
@@ -114,6 +134,10 @@ if __name__ == "__main__":
             decrease_and_conquer_analyzer.process_sample(sample)
         end_time = time.time()
         decrease_and_conquer_time = end_time - start_time
+        print("\nDecrease and Conquer Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))
+        print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", decrease_and_conquer_analyzer.get_heavy_hitters())
+        print("Frequency Counts:", decrease_and_conquer_analyzer.get_frequency_counts())
+        print("Quantile Estimate (Median):", decrease_and_conquer_analyzer.get_quantile_estimate())
 
         # Appending times to respective lists
         greedy_times.append(greedy_time)
@@ -124,10 +148,11 @@ if __name__ == "__main__":
         quickest_algorithm = min(greedy_time, divide_and_conquer_time, decrease_and_conquer_time)
 
         # Print results for this input size
+        print("~~~~~~~~~~")
         print(f"Input Size: {N}")
-        print(f"Greedy Algorithm Time: {greedy_time:.6f} seconds")
-        print(f"Divide and Conquer Algorithm Time: {divide_and_conquer_time:.6f} seconds")
-        print(f"Decrease and Conquer Algorithm Time: {decrease_and_conquer_time:.6f} seconds")
+        print(f" - Greedy Algorithm Time: {greedy_time:.6f} seconds")
+        print(f" - Divide and Conquer Algorithm Time: {divide_and_conquer_time:.6f} seconds")
+        print(f" - Decrease and Conquer Algorithm Time: {decrease_and_conquer_time:.6f} seconds")
         if quickest_algorithm == greedy_time:
             print("Quickest Algorithm: Greedy Algorithm\n")
         elif quickest_algorithm == divide_and_conquer_time:
