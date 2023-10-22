@@ -4,44 +4,50 @@ from collections import defaultdict
 import heapq
 import matplotlib.pyplot as plt
 
-global_input_sizes = [50, 500, 2500, 5000, 10000, 50000, 100000]  # List of input sizes to test
+global_input_sizes = [50, 500, 2500, 5000, 10000, 25000, 50000, 75000, 100000]  # List of input sizes to test
 class GreedyAnalyzer:
+    def __init__(self, data, threshold):
+        self.threshold = threshold
+        self.frequency_counts = {}
+        self.quantile_estimate = None
+        self.heavy_hitters = set()
+        self._process_data(data)
 
+    def _process_data(self, data):
+        for number in data:
+            if number in self.frequency_counts:
+                self.frequency_counts[number] += 1
+            else:
+                self.frequency_counts[number] = 1
 
-    def __init__(self, heavy_hitter_threshold):
-        self.frequency_counts = defaultdict(int)
-        self.quantile_estimators = []
-        self.heavy_hitters = []
-        self.heavy_hitter_threshold = heavy_hitter_threshold
+            if self.quantile_estimate is None or self.frequency_counts[number] > self.frequency_counts[self.quantile_estimate]:
+                self.quantile_estimate = number
 
-    def process_item(self, item):
-        self.frequency_counts[item] += 1
-        heapq.heappush(self.quantile_estimators, item)
-        if self.frequency_counts[item] >= self.heavy_hitter_threshold:
-            self.heavy_hitters.append(item)
+            if self.frequency_counts[number] >= self.threshold:
+                self.heavy_hitters.add(number)
 
     def get_frequency_counts(self):
-        return dict(self.frequency_counts)
+        return self.frequency_counts
 
     def get_quantile_estimate(self):
-        sorted_estimates = sorted(self.quantile_estimators)
-        median_index = len(sorted_estimates) // 2
-        return sorted_estimates[median_index]
+        return self.quantile_estimate
 
     def get_heavy_hitters(self):
-        return list(set(self.heavy_hitters))
+        return self.heavy_hitters
 
 class DivideAndConquerAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
-        self.quantile_estimators = []
+        self.quantile_estimate = None
         self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_batch(self, data_batch):
         for item in data_batch:
             self.frequency_counts[item] += 1
-            heapq.heappush(self.quantile_estimators, item)
+            if self.quantile_estimate is None or self.frequency_counts[item] > self.frequency_counts[
+                self.quantile_estimate]:
+                self.quantile_estimate = item
             if self.frequency_counts[item] >= self.heavy_hitter_threshold:
                 self.heavy_hitters.append(item)
 
@@ -49,9 +55,7 @@ class DivideAndConquerAnalyzer:
         return dict(self.frequency_counts)
 
     def get_quantile_estimate(self):
-        sorted_estimates = sorted(self.quantile_estimators)
-        median_index = len(sorted_estimates) // 2
-        return sorted_estimates[median_index]
+        return self.quantile_estimate
 
     def get_heavy_hitters(self):
         return list(set(self.heavy_hitters))
@@ -59,14 +63,16 @@ class DivideAndConquerAnalyzer:
 class DecreaseAndConquerAnalyzer:
     def __init__(self, heavy_hitter_threshold):
         self.frequency_counts = defaultdict(int)
-        self.quantile_estimators = []
+        self.quantile_estimate = None
         self.heavy_hitters = []
         self.heavy_hitter_threshold = heavy_hitter_threshold
 
     def process_sample(self, sample):
         for item in sample:
             self.frequency_counts[item] += 1
-            heapq.heappush(self.quantile_estimators, item)
+            if self.quantile_estimate is None or self.frequency_counts[item] > self.frequency_counts[
+                self.quantile_estimate]:
+                self.quantile_estimate = item
             if self.frequency_counts[item] >= self.heavy_hitter_threshold:
                 self.heavy_hitters.append(item)
 
@@ -74,9 +80,7 @@ class DecreaseAndConquerAnalyzer:
         return dict(self.frequency_counts)
 
     def get_quantile_estimate(self):
-        sorted_estimates = sorted(self.quantile_estimators)
-        median_index = len(sorted_estimates) // 2
-        return sorted_estimates[median_index]
+        return self.quantile_estimate
     def get_heavy_hitters(self):
         return list(set(self.heavy_hitters))
 
@@ -104,9 +108,7 @@ if __name__ == "__main__":
 
         # Greedy Algorithm
         start_time = time.time()
-        greedy_analyzer = GreedyAnalyzer(heavy_hitter_threshold)
-        for item in greedy_data_stream:
-            greedy_analyzer.process_item(item)
+        greedy_analyzer = GreedyAnalyzer(greedy_data_stream, heavy_hitter_threshold)
         end_time = time.time()
         greedy_time = end_time - start_time
         print("\nGreedy Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))

@@ -1,61 +1,52 @@
-from collections import defaultdict
-import heapq
 import random
-import time
 
+def generate_random_numbers(n):
+    return [random.randint(1, 20) for _ in range(n)]
 
+class GreedyAnalyzer:
+    def __init__(self, data, threshold):
+        self.threshold = threshold
+        self.frequency_counts = {}
+        self.quantile_estimate = None
+        self.heavy_hitters = set()
+        self._process_data(data)
 
-class RealTimeAnalyzer:
-    def __init__(self):
-        self.frequency_counts = defaultdict(int)
-        self.quantile_estimator = []
-        self.heavy_hitters_threshold = 5  # Example threshold for heavy hitters
+    def _process_data(self, data):
+        for number in data:
+            if number in self.frequency_counts:
+                self.frequency_counts[number] += 1
+            else:
+                self.frequency_counts[number] = 1
 
-    def process_data_stream(self, data_stream):
-        for item in data_stream:
-            # Task 1: Frequency Counting (Greedy)
-            self.frequency_counts[item] += 1
+            if self.quantile_estimate is None or self.frequency_counts[number] > self.frequency_counts[self.quantile_estimate]:
+                self.quantile_estimate = number
 
-            # Task 2: Quantile Estimation (Greedy - Using a min-heap for efficient tracking of top elements)
-            heapq.heappush(self.quantile_estimator, item)
-
-            # Task 3: Heavy Hitters Detection (Greedy - Thresholding)
-            if self.frequency_counts[item] >= self.heavy_hitters_threshold:
-                print(f"Heavy Hitter Detected: {item}")
-
-            # Maintain a max heap to keep the top elements for quantile estimation
-            if len(self.quantile_estimator) > len(data_stream) / 2:
-                heapq.heappop(self.quantile_estimator)
+            if self.frequency_counts[number] >= self.threshold:
+                self.heavy_hitters.add(number)
 
     def get_frequency_counts(self):
-        return dict(self.frequency_counts)
+        return self.frequency_counts
 
-    def get_quantile_estimate(self, quantile):
-        sorted_items = sorted(self.quantile_estimator)
-        index = int(len(sorted_items) * quantile)
-        return sorted_items[index]
+    def get_quantile_estimate(self):
+        return self.quantile_estimate
 
+    def get_heavy_hitters(self):
+        return self.heavy_hitters
 
-# Example usage with input size N
 if __name__ == "__main__":
-    N = 1000  # Size of the input data stream (adjust this value as needed)
-    data_stream = [random.randint(1, 20) for _ in range(N)]  # Generating a random data stream
+    n = 1000  # Size of the data stream
+    threshold = int(input("Enter the threshold for heavy hitters: "))
 
-    analyzer = RealTimeAnalyzer()
+    data_stream = generate_random_numbers(n)  # Assuming generate_random_numbers() function is defined
 
-    # Measure the time taken for processing
-    start_time = time.time()
-    analyzer.process_data_stream(data_stream)
-    end_time = time.time()
+    analyzer = GreedyAnalyzer(data_stream, threshold)
 
-    # Get results
-    frequency_counts = analyzer.get_frequency_counts()
-    quantile_estimate = analyzer.get_quantile_estimate(0.5)
+    print("Frequency Counts:")
+    print(analyzer.get_frequency_counts())
 
-    print("Frequency Counts:", frequency_counts)
-    print("Quantile Estimate (Median):", quantile_estimate)
+    print("\nQuantile Estimate:")
+    print(analyzer.get_quantile_estimate())
 
-    # Display the time taken for processing
-    print(f"Time taken for processing: {end_time - start_time:.5f} seconds")
-
+    print("\nHeavy Hitters (appearing more than {} times):".format(threshold))
+    print(analyzer.get_heavy_hitters())
 
