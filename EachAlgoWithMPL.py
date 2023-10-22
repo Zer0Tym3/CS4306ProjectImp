@@ -3,6 +3,8 @@ import time
 from collections import defaultdict
 import heapq
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 global_input_sizes = [50, 500, 2500, 5000, 10000, 25000, 50000, 75000, 100000]  # List of input sizes to test
 class GreedyAnalyzer:
@@ -34,73 +36,135 @@ class GreedyAnalyzer:
 
     def get_frequency_counts(self):
         return self.frequency_counts
-
     def get_quantile_estimates(self):
         return self.quantile_estimates
-
     def get_heavy_hitters(self):
         return list(set(self.heavy_hitters))
 
 class DivideAndConquerAnalyzer:
-    def __init__(self, heavy_hitter_threshold):
-        self.frequency_counts = defaultdict(int)
+    def __init__(self, numbers, threshold):
+        self.numbers = numbers
+        self.threshold = threshold
+        self.frequency_counts = {}
         self.quantile_estimates = {}
         self.heavy_hitters = []
-        self.heavy_hitter_threshold = heavy_hitter_threshold
 
-    def process_batch(self, data_batch):
-        for item in data_batch:
-            self.frequency_counts[item] += 1
-            if self.frequency_counts[item] >= self.heavy_hitter_threshold:
-                self.heavy_hitters.append(item)
+    def merge_sort(self, numbers):
+        if len(numbers) <= 1:
+            return numbers
 
-        data_batch.sort()
-        data_length = len(data_batch)
+        mid = len(numbers) // 2
+        left_half = self.merge_sort(numbers[:mid])
+        right_half = self.merge_sort(numbers[mid:])
+
+        return self.merge(left_half, right_half)
+
+    def merge(self, left, right):
+        merged = []
+        left_index, right_index = 0, 0
+
+        while left_index < len(left) and right_index < len(right):
+            if left[left_index] < right[right_index]:
+                merged.append(left[left_index])
+                left_index += 1
+            else:
+                merged.append(right[right_index])
+                right_index += 1
+
+        merged.extend(left[left_index:])
+        merged.extend(right[right_index:])
+        return merged
+
+    def calculate_frequency_counts(self, numbers):
+        for num in numbers:
+            self.frequency_counts[num] = self.frequency_counts.get(num, 0) + 1
+
+    def calculate_quantile_estimates(self, numbers):
+        sorted_numbers = self.merge_sort(numbers)
+        data_length = len(sorted_numbers)
 
         percentiles = [0.25, 0.50, 0.75]  # 25th, 50th (median), and 75th percentiles
 
         threshold_indices = [int(data_length * p) for p in percentiles]
         self.quantile_estimates = {
-            f'{int(p * 100)}th Percentile': data_batch[idx - 1] for p, idx in zip(percentiles, threshold_indices)
+            f'{int(p * 100)}th Percentile': sorted_numbers[idx - 1] for p, idx in zip(percentiles, threshold_indices)
         }
 
-    def get_frequency_counts(self):
-        return dict(self.frequency_counts)
+    def detect_heavy_hitters(self):
+        for num, count in self.frequency_counts.items():
+            if count >= self.threshold:
+                self.heavy_hitters.append(num)
 
+    def analyze(self):
+        sorted_numbers = self.merge_sort(self.numbers)
+        self.calculate_frequency_counts(sorted_numbers)
+        self.calculate_quantile_estimates(sorted_numbers)
+        self.detect_heavy_hitters()
+    def get_frequency_counts(self):
+        return self.frequency_counts
     def get_quantile_estimates(self):
         return self.quantile_estimates
-
     def get_heavy_hitters(self):
-        return list(set(self.heavy_hitters))
+        return self.heavy_hitters
 
 class DecreaseAndConquerAnalyzer:
-    def __init__(self, heavy_hitter_threshold):
-        self.frequency_counts = defaultdict(int)
-        self.quantile_estimates = {}
-        self.heavy_hitters = []
-        self.heavy_hitter_threshold = heavy_hitter_threshold
+    def __init__(self, data, threshold):
+        self.data = data
+        self.threshold = threshold
+        self.frequency_counts = None
+        self.quantile_estimates = None
+        self.heavy_hitters = None
 
-    def process_sample(self, sample):
-        for item in sample:
-            self.frequency_counts[item] += 1
-            if self.frequency_counts[item] >= self.heavy_hitter_threshold:
-                self.heavy_hitters.append(item)
-        sample.sort()
-        data_length = len(sample)
+    def process_data(self):
+        # Start timing
 
-        percentiles = [0.25, 0.50, 0.75]  # 25th, 50th (median), and 75th percentiles
+        # Step 1: Frequency Counts
+        self.frequency_counts = self.calculate_frequency_counts(self.data)
 
-        threshold_indices = [int(data_length * p) for p in percentiles]
-        self.quantile_estimates = {
-            f'{int(p * 100)}th Percentile': sample[idx - 1] for p, idx in zip(percentiles, threshold_indices)
-        }
+        # Step 2: Quantile Estimation
+        self.quantile_estimates = self.calculate_quantile_estimates(self.data)
+
+        # Step 3: Heavy Hitters
+        self.heavy_hitters = self.find_heavy_hitters(self.data)
+
+    def calculate_frequency_counts(self, data):
+        if len(data) == 0:
+            return {}
+
+        if len(data) == 1:
+            return {data[0]: 1}
+
+        mid = len(data) // 2
+        left_counts = self.calculate_frequency_counts(data[:mid])
+        right_counts = self.calculate_frequency_counts(data[mid:])
+        return self.merge_frequency_counts(left_counts, right_counts)
+
+    def merge_frequency_counts(self, left_counts, right_counts):
+        merged_counts = left_counts.copy()
+        for item, count in right_counts.items():
+            merged_counts[item] = merged_counts.get(item, 0) + count
+
+        return merged_counts
+
+    def calculate_quantile_estimates(self, data):
+        sorted_data = sorted(data)
+        num_values = len(sorted_data)
+        q1 = np.percentile(sorted_data, 25)
+        q2 = np.percentile(sorted_data, 50)
+        q3 = np.percentile(sorted_data, 75)
+        return {"25th Percentile": int(q1), "50th Percentile": int(q2), "75th Percentile": int(q3)}
+
+    def find_heavy_hitters(self, data):
+        counts = self.calculate_frequency_counts(data)
+        return [item for item, count in counts.items() if count >= self.threshold]
     def get_frequency_counts(self):
-        return dict(self.frequency_counts)
+        return self.frequency_counts
 
     def get_quantile_estimates(self):
         return self.quantile_estimates
+
     def get_heavy_hitters(self):
-        return list(set(self.heavy_hitters))
+        return self.heavy_hitters
 
 # Example usage with input size N and timing information
 if __name__ == "__main__":
@@ -136,11 +200,11 @@ if __name__ == "__main__":
 
         # Divide and Conquer Algorithm
         start_time = time.time()
-        divide_and_conquer_analyzer = DivideAndConquerAnalyzer(heavy_hitter_threshold)
-
-        for i in range(0, len(divide_and_conquer_data_stream), batch_size):
-            data_batch = divide_and_conquer_data_stream[i:i + batch_size]
-            divide_and_conquer_analyzer.process_batch(data_batch)
+        divide_and_conquer_analyzer = DivideAndConquerAnalyzer(divide_and_conquer_data_stream, heavy_hitter_threshold)
+        divide_and_conquer_analyzer.analyze()
+        # for i in range(0, len(divide_and_conquer_data_stream), batch_size):
+        #     data_batch = divide_and_conquer_data_stream[i:i + batch_size]
+        #     divide_and_conquer_analyzer.process_batch(data_batch)
         end_time = time.time()
         divide_and_conquer_time = end_time - start_time
         print("\nDivide and Conquer Algorithm (Batch Size:", batch_size,") - Time taken: {:.6f} seconds".format(end_time - start_time))
@@ -150,11 +214,11 @@ if __name__ == "__main__":
 
         # Decrease and Conquer Algorithm
         start_time = time.time()
-        decrease_and_conquer_analyzer = DecreaseAndConquerAnalyzer(heavy_hitter_threshold)
-
-        for i in range(0, len(decrease_and_conquer_data_stream), sample_size):
-            sample = decrease_and_conquer_data_stream[i:i + sample_size]
-            decrease_and_conquer_analyzer.process_sample(sample)
+        decrease_and_conquer_analyzer = DecreaseAndConquerAnalyzer(decrease_and_conquer_data_stream, heavy_hitter_threshold)
+        decrease_and_conquer_analyzer.process_data()
+        # for i in range(0, len(decrease_and_conquer_data_stream), sample_size):
+        #     sample = decrease_and_conquer_data_stream[i:i + sample_size]
+        #     decrease_and_conquer_analyzer.process_sample(sample)
         end_time = time.time()
         decrease_and_conquer_time = end_time - start_time
         print("\nDecrease and Conquer Algorithm (Sample Size:", sample_size,") - Time taken: {:.6f} seconds".format(end_time - start_time))
