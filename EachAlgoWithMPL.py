@@ -91,7 +91,10 @@ if __name__ == "__main__":
     decrease_and_conquer_times = []
 
     for N in input_sizes:
-        heavy_hitter_threshold = int(0.05 * N)
+        heavy_hitter_threshold = int(0.05 * N)  # Heavy Hitter Threshold is Scaled 5% of Input Size
+        batch_size = int(0.1 * N)  # Batch Size is Scaled with Input Size for Div&Con
+        sample_size = int(0.1 * N)  # Sample Size is Scaled with Input Size for Dec&Con
+
         data_stream = [random.randint(1, 20) for _ in range(N)]  # Generating a random data stream
 
         # Creating copies of the data stream for each algorithm
@@ -114,13 +117,13 @@ if __name__ == "__main__":
         # Divide and Conquer Algorithm
         start_time = time.time()
         divide_and_conquer_analyzer = DivideAndConquerAnalyzer(heavy_hitter_threshold)
-        batch_size = 1000  # Adjust batch size as needed
+
         for i in range(0, len(divide_and_conquer_data_stream), batch_size):
             data_batch = divide_and_conquer_data_stream[i:i + batch_size]
             divide_and_conquer_analyzer.process_batch(data_batch)
         end_time = time.time()
         divide_and_conquer_time = end_time - start_time
-        print("\nDivide and Conquer Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))
+        print("\nDivide and Conquer Algorithm (Batch Size:", batch_size,") - Time taken: {:.6f} seconds".format(end_time - start_time))
         print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", divide_and_conquer_analyzer.get_heavy_hitters())
         print("Frequency Counts:", divide_and_conquer_analyzer.get_frequency_counts())
         print("Quantile Estimate (Median):", divide_and_conquer_analyzer.get_quantile_estimate())
@@ -128,13 +131,13 @@ if __name__ == "__main__":
         # Decrease and Conquer Algorithm
         start_time = time.time()
         decrease_and_conquer_analyzer = DecreaseAndConquerAnalyzer(heavy_hitter_threshold)
-        sample_size = 1000  # Adjust sample size as needed
+
         for i in range(0, len(decrease_and_conquer_data_stream), sample_size):
             sample = decrease_and_conquer_data_stream[i:i + sample_size]
             decrease_and_conquer_analyzer.process_sample(sample)
         end_time = time.time()
         decrease_and_conquer_time = end_time - start_time
-        print("\nDecrease and Conquer Algorithm - Time taken: {:.6f} seconds".format(end_time - start_time))
+        print("\nDecrease and Conquer Algorithm (Sample Size:", sample_size,") - Time taken: {:.6f} seconds".format(end_time - start_time))
         print("Heavy Hitters (Threshold: ", heavy_hitter_threshold,"): ", decrease_and_conquer_analyzer.get_heavy_hitters())
         print("Frequency Counts:", decrease_and_conquer_analyzer.get_frequency_counts())
         print("Quantile Estimate (Median):", decrease_and_conquer_analyzer.get_quantile_estimate())
