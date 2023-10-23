@@ -49,45 +49,43 @@ class DivideAndConquerAnalyzer:
         self.quantile_estimates = {}
         self.heavy_hitters = []
 
-    def merge_sort(self, numbers):
+    def divide_and_conquer(self, numbers):
         if len(numbers) <= 1:
             return numbers
 
         mid = len(numbers) // 2
-        left_half = self.merge_sort(numbers[:mid])
-        right_half = self.merge_sort(numbers[mid:])
+        left_half = self.divide_and_conquer(numbers[:mid])
+        right_half = self.divide_and_conquer(numbers[mid:])
 
-        return self.merge(left_half, right_half)
+        return self.combine(left_half, right_half)
 
-    def merge(self, left, right):
-        merged = []
+    def combine(self, left, right):
+        combined = []
         left_index, right_index = 0, 0
 
         while left_index < len(left) and right_index < len(right):
             if left[left_index] < right[right_index]:
-                merged.append(left[left_index])
+                combined.append(left[left_index])
                 left_index += 1
             else:
-                merged.append(right[right_index])
+                combined.append(right[right_index])
                 right_index += 1
 
-        merged.extend(left[left_index:])
-        merged.extend(right[right_index:])
-        return merged
+        combined.extend(left[left_index:])
+        combined.extend(right[right_index:])
+        return combined
 
     def calculate_frequency_counts(self, numbers):
         for num in numbers:
             self.frequency_counts[num] = self.frequency_counts.get(num, 0) + 1
 
     def calculate_quantile_estimates(self, numbers):
-        sorted_numbers = self.merge_sort(numbers)
-        data_length = len(sorted_numbers)
-
-        percentiles = [0.25, 0.50, 0.75]  # 25th, 50th (median), and 75th percentiles
-
-        threshold_indices = [int(data_length * p) for p in percentiles]
+        n = len(numbers)
+        quantiles = [numbers[i * n // 4] for i in range(1, 4)]
         self.quantile_estimates = {
-            f'{int(p * 100)}th Percentile': sorted_numbers[idx - 1] for p, idx in zip(percentiles, threshold_indices)
+            "25th Percentile": quantiles[0],
+            "50th Percentile": quantiles[1],
+            "75th Percentile": quantiles[2]
         }
 
     def detect_heavy_hitters(self):
@@ -96,10 +94,12 @@ class DivideAndConquerAnalyzer:
                 self.heavy_hitters.append(num)
 
     def analyze(self):
-        sorted_numbers = self.merge_sort(self.numbers)
+        sorted_numbers = self.divide_and_conquer(self.numbers)
         self.calculate_frequency_counts(sorted_numbers)
         self.calculate_quantile_estimates(sorted_numbers)
         self.detect_heavy_hitters()
+
+
     def get_frequency_counts(self):
         return self.frequency_counts
     def get_quantile_estimates(self):
